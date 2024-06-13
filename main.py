@@ -21,6 +21,6 @@ if __name__ == '__main__':
         if menu_option == '4': remove_users_from_db()
         if menu_option == '5': update_users(db_params)
         if menu_option == '6':
-            for user in users:
+            for user in get_users(db_params):
                 map_single_users(user['name'],user['post'],user['location'])
         if menu_option == '7':map_all_users(get_users(db_params))

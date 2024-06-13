@@ -8,8 +8,8 @@ def read(users: list[dict[str, str]]) -> None:
 
 
 def add_user(lista: list) -> None:
-    user_name = input('Podaj imie: ')
-    user_surname = input('podaj nazwisko: ')
+    user_name = input('Podaj name: ')
+    user_surname = input('podaj surname: ')
     user_post = input('podaj ile postów: ')
     lista.append({'name': user_name, 'surname': user_surname, 'post': user_post})
 
@@ -33,8 +33,8 @@ def update_user(users: list[dict[str, str]]) -> None:
     user_name = input('kogo zaktualizować?: ')
     for user in users[1:]:
         if user['name'] == user_name:
-            user['name'] = input('podaj nowe imie')
-            user['surname'] = input('podaj nowe nazwisko')
+            user['name'] = input('podaj nowe name')
+            user['surname'] = input('podaj nowe surname')
             user['post'] = input('podaj nową liczbe postów')
 
 def map_single_users(imie,postow,miasto:str):

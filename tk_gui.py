@@ -1,30 +1,106 @@
 from tkinter import *
+import psycopg2
+import requests
+from bs4 import BeautifulSoup
 
-user_list=[]
+db_params = psycopg2.connect(
+    database='postgres',
+    user='postgres',
+    password='postgres',
+    host='localhost',
+    port='5432'
+)
+users=[]
 class User:
     def __init__(self,imie,nazwisko,posty,miejscowosc):
-        self.imie = imie
-        self.nazwisko = nazwisko
-        self.posty = posty
-        self.miejscowosc = miejscowosc
+        self.name = imie
+        self.surname = nazwisko
+        self.posts = posty
+        self.location = miejscowosc
+
+def get_coords(miejscowosc) -> list:
+    url = (f'https://pl.wikipedia.org/wiki/{miejscowosc}')
+    response = requests.get(url)
+    response_html = BeautifulSoup(response.text, 'html.parser')
+    longitude = float(response_html.select('.longitude')[1].text.replace(',', '.'))
+    latitude = float(response_html.select('.latitude')[1].text.replace(',', '.'))
+    return [longitude, latitude]
 
 
 def create_user()->None:
+
     imie=entry_imie.get()
     nazwisko=entry_nazwisko.get()
     posty=entry_posty.get()
     miejscowosc=entry_miejscowosc.get()
     uzytkownik=User(imie,nazwisko,posty,miejscowosc)
-
-    user_list.append(uzytkownik)
-    # print(user_list)
-    show_user()
-def show_user()->None:
+    longitude, latitude = get_coords(miejscowosc)
+    sql_add_query = f"INSERT INTO public.users( name, surname, post, location, coords)VALUES ( '{imie}', '{nazwisko}', {posty}, '{miejscowosc}', 'SRID=4326;POINT({longitude} {latitude})');"
+    cursor = db_params.cursor()
+    cursor.execute(sql_add_query)
+    db_params.commit()
+    users.append(uzytkownik)
+    # print(users)
+    display_users()
+    entry_imie.delete(0, END)
+    entry_nazwisko.delete(0, END)
+    entry_posty.delete(0, END)
+    entry_miejscowosc.delete(0, END)
+    entry_imie.focus()
+def display_users()->None:
     listbox_lista_uzytkownikow.delete(0,END)
-    for idx,user in enumerate(user_list):
-        print(idx,user.imie,user.posty,user.miejscowosc)
-        listbox_lista_uzytkownikow.insert(idx,f'{user.imie} {user.nazwisko}, {user.posty}, {user.miejscowosc}')
+    sql_add_query = f"SELECT * FROM public.users  "
+    cursor = db_params.cursor()
+    cursor.execute(sql_add_query)
+    users_db = cursor.fetchall()
+    for idx,user in enumerate(users_db):
+        print(idx, user[0], user[1], user[3])
+        listbox_lista_uzytkownikow.insert(idx,f'{user[0]} {user[1]}, {user[2]}, {user[3]}')
 
+
+def delete_user()->None:
+    i=listbox_lista_uzytkownikow.index(ACTIVE)
+    print(i)
+
+
+    cursor = db_params.cursor()
+    sql_remove_query = f"DELETE FROM public.users where name='{users[i].name}';  "
+    cursor.execute(sql_remove_query)
+    db_params.commit()
+    users.pop(listbox_lista_uzytkownikow.index(ACTIVE))
+    display_users()
+
+
+
+def edit_user_data() -> None:
+    """
+    Updates the user data and marker on the map with the values from the Entry widgets.
+
+    Args:
+        i (int): The index of the user to be updated in the users list.
+    """
+    i = listbox_lista_uzytkownikow.index(ACTIVE)
+    entry_imie.insert(0, users[i].name)
+    entry_nazwisko.insert(0, users[i].surname)
+    entry_posty.insert(0, users[i].posts)
+    entry_miejscowosc.insert(0, users[i].location)
+
+    button_dodaj_uzytkownika.config(text="Zapisz zmiany", command=lambda: update_user(i))
+
+
+def update_user(i) -> None:
+    users[i].name = entry_imie.get()
+    users[i].surname = entry_nazwisko.get()
+    users[i].posts = entry_posty.get()
+    users[i].location = entry_miejscowosc.get()
+
+    display_users()
+    button_dodaj_uzytkownika.config(text="Dodaj użytkownika", command=create_user)
+    entry_imie.delete(0, END)
+    entry_nazwisko.delete(0, END)
+    entry_posty.delete(0, END)
+    entry_miejscowosc.delete(0, END)
+    entry_imie.focus()
 
 
 
@@ -49,8 +125,8 @@ ramka_pokaz_szczegoly.grid(row=1, column=0,columnspan=2,padx=50,pady=20)
 label_lista_uzytkownikow=Label(ramka_lista_uzytkownikow,text="Lista obiektów")
 listbox_lista_uzytkownikow=Listbox(ramka_lista_uzytkownikow,width=30)
 button_pokaz_szczegoly=Button(ramka_lista_uzytkownikow,text="Pokaz szczegoly")
-button_edytuj_uzytkownika=Button(ramka_lista_uzytkownikow,text="Edytuj")
-button_usun_uzytkownika=Button(ramka_lista_uzytkownikow,text="Usuń")
+button_edytuj_uzytkownika=Button(ramka_lista_uzytkownikow,text="Edytuj",command=edit_user_data)
+button_usun_uzytkownika=Button(ramka_lista_uzytkownikow,text="Usuń",command=delete_user)
 
 label_lista_uzytkownikow.grid(row=0, column=0)
 listbox_lista_uzytkownikow.grid(row=1, column=0, columnspan=3)
