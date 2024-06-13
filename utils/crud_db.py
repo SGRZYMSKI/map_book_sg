@@ -1,6 +1,4 @@
 import psycopg2
-import requests
-from bs4 import BeautifulSoup
 
 db_params = psycopg2.connect(
     database='postgres',
@@ -17,20 +15,10 @@ def add_user_to_table(db_params) -> None:
     post = input('Post: ')
     miejscowosc = input('Miejscowość: ')
 
-    url = (f'https://pl.wikipedia.org/wiki/{miejscowosc}')
-    response = requests.get(url)
-    response_html = BeautifulSoup(response.text, 'html.parser')
-    longitude = float(response_html.select('.longitude')[1].text.replace(',', '.'))
-    latitude = float(response_html.select('.latitude')[1].text.replace(',', '.'))
-    print(longitude, latitude)
-
-    sql_add_query = f"INSERT INTO public.users( name, surname, post, location, coords)VALUES ( '{imie}', '{nazwiska}', {post}, '{miejscowosc}', 'SRID=4326;POINT({longitude} {latitude})');"
+    sql_add_query = f"INSERT INTO public.users( name, surname, post, location, coords)VALUES ( '{imie}', '{nazwiska}', {post}, '{miejscowosc}', 'SRID=4326;POINT(21.0 52.23)');"
     cursor = db_params.cursor()
     cursor.execute(sql_add_query)
     db_params.commit()
-
-
-add_user_to_table(db_params)
 
 
 def show_users(db_params) -> None:
@@ -38,17 +26,10 @@ def show_users(db_params) -> None:
     cursor = db_params.cursor()
     cursor.execute(sql_add_query)
     users = cursor.fetchall()
-    # print(users)
-    # db_params.commit()
+
     for user in users:
         print(user)
 
-
-show_users(db_params)
-
-
-# DELETE FROM public.users
-# 	WHERE id=2
 
 def remove_users_from_db(db_params) -> None:
     cursor = db_params.cursor()
@@ -57,18 +38,8 @@ def remove_users_from_db(db_params) -> None:
     db_params.commit()
 
 
-# remove_users_from_db(db_params)
-# show_users(db_params)
-
-# UPDATE public.users
-# 	SET name='aa', surname='aa', post=1
-# 	WHERE id=4
-
 def update_users(db_params) -> None:
     cursor = db_params.cursor()
     sql_update_query = f"UPDATE public.users SET name='{input('Imie: ')}', surname='{input('surname: ')}', post='{int(input('post: '))}' WHERE id=4"
     cursor.execute(sql_update_query)
     db_params.commit()
-
-
-# update_users(db_params)
