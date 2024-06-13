@@ -10,6 +10,17 @@ db_params = psycopg2.connect(
     port='5432'
 )
 
+def get_coords(miejscowosc) -> list:
+    url = (f'https://pl.wikipedia.org/wiki/{miejscowosc}')
+    response = requests.get(url)
+    response_html = BeautifulSoup(response.text, 'html.parser')
+    longitude = float(response_html.select('.longitude')[1].text.replace(',', '.'))
+    latitude = float(response_html.select('.latitude')[1].text.replace(',', '.'))
+    return [longitude, latitude]
+
+
+
+
 
 def add_user_to_table(db_params) -> None:
     imie = input('Imie: ')
@@ -17,12 +28,7 @@ def add_user_to_table(db_params) -> None:
     post = input('Post: ')
     miejscowosc = input('Miejscowość: ')
 
-    url = (f'https://pl.wikipedia.org/wiki/{miejscowosc}')
-    response = requests.get(url)
-    response_html = BeautifulSoup(response.text, 'html.parser')
-    longitude = float(response_html.select('.longitude')[1].text.replace(',', '.'))
-    latitude = float(response_html.select('.latitude')[1].text.replace(',', '.'))
-    print(longitude, latitude)
+    longitude,latitude=get_coords(miejscowosc)
 
     sql_add_query = f"INSERT INTO public.users( name, surname, post, location, coords)VALUES ( '{imie}', '{nazwiska}', {post}, '{miejscowosc}', 'SRID=4326;POINT({longitude} {latitude})');"
     cursor = db_params.cursor()
@@ -30,7 +36,7 @@ def add_user_to_table(db_params) -> None:
     db_params.commit()
 
 
-add_user_to_table(db_params)
+# add_user_to_table(db_params)
 
 
 def show_users(db_params) -> None:
@@ -56,19 +62,34 @@ def remove_users_from_db(db_params) -> None:
     cursor.execute(sql_remove_query)
     db_params.commit()
 
+def get_user_id(db_params) -> int:
+    print('kogo aktualizować')
+    sql_add_query = f"SELECT * FROM public.users where name='{input('Imie: ')}'; "
+    cursor = db_params.cursor()
+    cursor.execute(sql_add_query)
+    id = cursor.fetchall()[0][0]
+    return id
 
-# remove_users_from_db(db_params)
-# show_users(db_params)
-
-# UPDATE public.users
-# 	SET name='aa', surname='aa', post=1
-# 	WHERE id=4
 
 def update_users(db_params) -> None:
     cursor = db_params.cursor()
-    sql_update_query = f"UPDATE public.users SET name='{input('Imie: ')}', surname='{input('surname: ')}', post='{int(input('post: '))}' WHERE id=4"
+    imie = input(' new Imie: ')
+    nazwiska = input('new Nazwiska: ')
+    post = input('new Post: ')
+    miejscowosc = input('new Miejscowość: ')
+
+    longitude,latitude=get_coords(miejscowosc)
+
+    sql_update_query = f"UPDATE public.users SET name='{imie}', surname='{nazwiska}', post='{int(post)}', location='{miejscowosc}',coords='SRID=4326;POINT({longitude} {latitude})' WHERE id={get_user_id(db_params)}"
     cursor.execute(sql_update_query)
     db_params.commit()
 
 
 # update_users(db_params)
+
+
+
+
+
+
+
