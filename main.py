@@ -15,12 +15,13 @@ if __name__ == '__main__':
         print('7. wyświetl zbiorczą mapę')
         menu_option = input('wybierz opcje menu: ')
         if menu_option == '0': break
-        if menu_option == '1': show_users(db_params)
-        if menu_option == '2': add_user_to_table(db_params)
-        if menu_option == '3': get_user_id(db_params)
+        if menu_option == '1': show_users(clinic_list)
+        if menu_option == '2': add_user_to_table(clinic_list)
+        if menu_option == '3': get_user_id(clinic_list)
         if menu_option == '4': remove_users_from_db()
-        if menu_option == '5': update_users(db_params)
+        if menu_option == '5': update_users(clinic_list)
         if menu_option == '6':
-            for user in get_users(db_params):
+            for user in get_users(clinic_list):
                 map_single_users(user['name'],user['post'],user['location'])
         if menu_option == '7':map_all_users(get_users(db_params))
+
